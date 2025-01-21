@@ -1,0 +1,5 @@
+# Cấu hình các config đồng bộ các editor với nhau nếu dự án có nhiều người tham gia.
+# Để VS Code hiểu được file này thì anh em cài Extension là EditorConfig for VS Code.
+[*]
+indent_size = 2
+indent_style = space
