@@ -1,14 +1,28 @@
 import express from 'express'
+import exitHook from 'async-exit-hook'
+import { CLOSE_DB, CONNECT_DB, GET_DB } from '~/config/mongodb'
+import { env } from '~/config/environtment'
 
-const app = express()
+const START_SERVER = () => {
+  const app = express()
 
-const hostname = 'localhost'
-const port = 8080
+  app.get('/', async (req, res) => {
+    console.log(await GET_DB().listCollections().toArray())
+    res.send('<h1>Hello World!</h1>')
+  })
 
-app.get('/', (req, res) => {
-  res.send('<h1>Hello World!</h1>')
-})
+  app.listen(env.APP_PORT, env.APP_HOST, () => {
+    console.log(`Server running at http://${env.APP_HOST}:${env.APP_PORT}/`)
+  })
 
-app.listen(port, hostname, () => {
-  console.log(`Server running at http://${hostname}:${port}/`)
-})
+  exitHook(() => {
+    CLOSE_DB()
+  })
+}
+
+CONNECT_DB()
+  .then(() => START_SERVER())
+  .catch((err) => {
+    console.error(err)
+    process.exit(0)
+  })
