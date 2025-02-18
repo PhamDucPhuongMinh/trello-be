@@ -1,11 +1,13 @@
 import Joi from 'joi'
-import { ObjectId } from 'mongodb'
+import { ObjectId, PushOperator } from 'mongodb'
 import { GET_DB } from '~/config/mongodb'
 import { BOARD_TYPES } from '~/utils/constants'
 import { OBJECT_ID_RULE, OBJECT_ID_RULE_MESSAGE } from '~/utils/validators'
 import { columnModel } from './columnModel'
 import { cardModel } from './cardModel'
-import { BoardSchemaType } from '~/types/boardType'
+import { BoardSchemaType, CreateBoardRequestBodyType } from '~/types/boardType'
+import { ColumnSchemaType } from '~/types/columnType'
+import { CardSchemaType } from '~/types/cardType'
 
 // Define Collection (name & schema)
 const BOARD_COLLECTION_NAME = 'boards'
@@ -23,7 +25,7 @@ const BOARD_COLLECTION_SCHEMA = Joi.object<BoardSchemaType>({
   _destroy: Joi.boolean().default(false)
 })
 
-const create = async (data: object) => {
+const create = async (data: CreateBoardRequestBodyType & { slug: string }) => {
   try {
     const validData = await BOARD_COLLECTION_SCHEMA.validateAsync(data, { abortEarly: false })
     const createdBoardId = await GET_DB().collection(BOARD_COLLECTION_NAME).insertOne(validData)
@@ -39,6 +41,22 @@ const findOneById = async (id: string | ObjectId) => {
       .collection(BOARD_COLLECTION_NAME)
       .findOne({ _id: new ObjectId(id) })
     return result as (BoardSchemaType & { _id: ObjectId }) | null
+  } catch (error) {
+    throw new Error(String(error))
+  }
+}
+
+const pushColumnOrderIds = async (boardId: string | ObjectId, columnId: string | ObjectId) => {
+  try {
+    await GET_DB()
+      .collection(BOARD_COLLECTION_NAME)
+      .findOneAndUpdate(
+        { _id: new ObjectId(boardId) },
+        { $push: { columnOrderIds: new ObjectId(columnId) } as PushOperator<BoardSchemaType> },
+        {
+          returnDocument: 'after'
+        }
+      )
   } catch (error) {
     throw new Error(String(error))
   }
@@ -73,7 +91,12 @@ const getDetails = async (id: string | ObjectId) => {
         }
       ])
       .toArray()
-    return result[0] || null
+    return (
+      (result[0] as BoardSchemaType & {
+        columns: (ColumnSchemaType & { _id: ObjectId })[]
+        cards: (CardSchemaType & { _id: ObjectId })[]
+      }) || null
+    )
   } catch (error) {
     throw new Error(String(error))
   }
@@ -84,5 +107,6 @@ export const boardModel = {
   BOARD_COLLECTION_SCHEMA,
   create,
   findOneById,
+  pushColumnOrderIds,
   getDetails
 }

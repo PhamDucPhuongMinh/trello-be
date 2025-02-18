@@ -1,15 +1,14 @@
 import { NextFunction, Request, Response } from 'express'
 import { StatusCodes } from 'http-status-codes'
 import Joi from 'joi'
-import { CreateBoardRequestBodyType } from '~/types/boardType'
+import { CreateColumnRequestBodyType } from '~/types/columnType'
 import ApiError from '~/utils/ApiError'
-import { BOARD_TYPES } from '~/utils/constants'
+import { OBJECT_ID_RULE, OBJECT_ID_RULE_MESSAGE } from '~/utils/validators'
 
 const create = async (req: Request, res: Response, next: NextFunction) => {
-  const correctCondition = Joi.object<CreateBoardRequestBodyType>({
-    title: Joi.string().required().min(3).max(50).trim().strict(),
-    description: Joi.string().required().min(3).max(256).trim().strict(),
-    type: Joi.string().required().valid(BOARD_TYPES.PUBLIC, BOARD_TYPES.PRIVATE).trim().strict()
+  const correctCondition = Joi.object<CreateColumnRequestBodyType>({
+    boardId: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE),
+    title: Joi.string().required().min(3).max(50).trim().strict()
   })
 
   try {
@@ -20,6 +19,6 @@ const create = async (req: Request, res: Response, next: NextFunction) => {
   }
 }
 
-export const boardValidation = {
+export const columnValidation = {
   create
 }
