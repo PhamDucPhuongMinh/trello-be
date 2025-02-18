@@ -1,18 +1,19 @@
-// REQUEST BODY TYPE
-export type CreateResBoardBodyType = {
+import { ObjectId } from 'mongodb'
+
+// Kiểu dữ liệu truyền vào body của request khi tạo mới một board
+export type CreateBoardRequestBodyType = {
   title: string
   description: string
   type: string
 }
 
-// OBJECT TYPE
 export type BoardSchemaType = {
   title: string
   slug: string
   description: string
   type: string
-  columnOrderIds: string
+  columnOrderIds: ObjectId[]
   createdAt: string
-  updatedAt: string
+  updatedAt: string | null
   _destroy: string
 }
