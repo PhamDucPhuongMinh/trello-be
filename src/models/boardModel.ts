@@ -24,6 +24,7 @@ const BOARD_COLLECTION_SCHEMA = Joi.object<BoardSchemaType>({
   updatedAt: Joi.date().timestamp('javascript').default(null),
   _destroy: Joi.boolean().default(false)
 })
+const INVALID_UPDATE_FIELDS = ['_id', 'createdAt']
 
 const create = async (data: CreateBoardRequestBodyType & { slug: string }) => {
   try {
@@ -48,7 +49,7 @@ const findOneById = async (id: string | ObjectId) => {
 
 const pushColumnOrderIds = async (boardId: string | ObjectId, columnId: string | ObjectId) => {
   try {
-    await GET_DB()
+    const result = await GET_DB()
       .collection(BOARD_COLLECTION_NAME)
       .findOneAndUpdate(
         { _id: new ObjectId(boardId) },
@@ -57,19 +58,20 @@ const pushColumnOrderIds = async (boardId: string | ObjectId, columnId: string |
           returnDocument: 'after'
         }
       )
+    return result
   } catch (error) {
     throw new Error(String(error))
   }
 }
 
-const getDetails = async (id: string | ObjectId) => {
+const getDetails = async (boardId: string | ObjectId) => {
   try {
     const result = await GET_DB()
       .collection(BOARD_COLLECTION_NAME)
       .aggregate([
         {
           $match: {
-            _id: new ObjectId(id),
+            _id: new ObjectId(boardId),
             _destroy: false
           }
         },
@@ -102,11 +104,43 @@ const getDetails = async (id: string | ObjectId) => {
   }
 }
 
+const update = async (boardId: string | ObjectId, updatedData: Partial<BoardSchemaType>) => {
+  try {
+    Object.keys(updatedData).forEach((key) => {
+      if (INVALID_UPDATE_FIELDS.includes(key)) {
+        delete updatedData[key as keyof BoardSchemaType]
+      }
+      // Check nếu key không có trong schema thì xóa luôn
+      else if (!Object.keys(BOARD_COLLECTION_SCHEMA.describe().keys).includes(key)) {
+        delete updatedData[key as keyof BoardSchemaType]
+      }
+    })
+
+    if (updatedData.columnOrderIds) {
+      updatedData.columnOrderIds = updatedData.columnOrderIds.map((id) => new ObjectId(id))
+    }
+
+    const result = await GET_DB()
+      .collection(BOARD_COLLECTION_NAME)
+      .findOneAndUpdate(
+        { _id: new ObjectId(boardId) },
+        { $set: updatedData },
+        {
+          returnDocument: 'after'
+        }
+      )
+    return result
+  } catch (error) {
+    throw new Error(String(error))
+  }
+}
+
 export const boardModel = {
   BOARD_COLLECTION_NAME,
   BOARD_COLLECTION_SCHEMA,
   create,
   findOneById,
   pushColumnOrderIds,
-  getDetails
+  getDetails,
+  update
 }

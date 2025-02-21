@@ -1,6 +1,6 @@
 import { boardModel } from '~/models/boardModel'
 import { columnModel } from '~/models/columnModel'
-import { CreateColumnRequestBodyType } from '~/types/columnType'
+import { ColumnSchemaType, CreateColumnRequestBodyType } from '~/types/columnType'
 
 const create = async (reqBody: CreateColumnRequestBodyType) => {
   const createdColumnId = await columnModel.create({ ...reqBody })
@@ -19,6 +19,17 @@ const create = async (reqBody: CreateColumnRequestBodyType) => {
   return createdColumn
 }
 
+const update = async (id: string, reqBody: Partial<ColumnSchemaType>) => {
+  const updateData: Partial<ColumnSchemaType> = {
+    ...reqBody,
+    updatedAt: Date.now()
+  }
+  const updatedColumn = await columnModel.update(id, updateData)
+
+  return updatedColumn
+}
+
 export const columnService = {
-  create
+  create,
+  update
 }

@@ -17,6 +17,7 @@ const COLUMN_COLLECTION_SCHEMA = Joi.object<ColumnSchemaType>({
   updatedAt: Joi.date().timestamp('javascript').default(null),
   _destroy: Joi.boolean().default(false)
 })
+const INVALID_UPDATE_FIELDS = ['_id', 'boardId', 'createdAt']
 
 const create = async (data: CreateColumnRequestBodyType) => {
   try {
@@ -52,7 +53,38 @@ const pushCardOrderIds = async (columnId: string | ObjectId, cardId: string | Ob
         }
       )
 
-    return result ? result.value : null
+    return result
+  } catch (error) {
+    throw new Error(String(error))
+  }
+}
+
+const update = async (columnId: string | ObjectId, updatedData: Partial<ColumnSchemaType>) => {
+  try {
+    Object.keys(updatedData).forEach((key) => {
+      if (INVALID_UPDATE_FIELDS.includes(key)) {
+        delete updatedData[key as keyof ColumnSchemaType]
+      }
+      // Check nếu key không có trong schema thì xóa luôn
+      else if (!Object.keys(COLUMN_COLLECTION_SCHEMA.describe().keys).includes(key)) {
+        delete updatedData[key as keyof ColumnSchemaType]
+      }
+    })
+
+    if (updatedData.cardOrderIds) {
+      updatedData.cardOrderIds = updatedData.cardOrderIds.map((id) => new ObjectId(id))
+    }
+
+    const result = await GET_DB()
+      .collection(COLUMN_COLLECTION_NAME)
+      .findOneAndUpdate(
+        { _id: new ObjectId(columnId) },
+        { $set: updatedData },
+        {
+          returnDocument: 'after'
+        }
+      )
+    return result
   } catch (error) {
     throw new Error(String(error))
   }
@@ -63,5 +95,6 @@ export const columnModel = {
   COLUMN_COLLECTION_SCHEMA,
   create,
   findOneById,
-  pushCardOrderIds
+  pushCardOrderIds,
+  update
 }

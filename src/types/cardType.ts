@@ -12,7 +12,7 @@ export type CardSchemaType = {
   columnId: ObjectId
   title: string
   description: string
-  createdAt: string
-  updatedAt: string | null
+  createdAt: number
+  updatedAt: number | null
   _destroy: boolean
 }

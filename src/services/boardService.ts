@@ -2,7 +2,9 @@ import { StatusCodes } from 'http-status-codes'
 import { cloneDeep } from 'lodash'
 import { ObjectId } from 'mongodb'
 import { boardModel } from '~/models/boardModel'
-import { BoardSchemaType, CreateBoardRequestBodyType } from '~/types/boardType'
+import { cardModel } from '~/models/cardModel'
+import { columnModel } from '~/models/columnModel'
+import { BoardSchemaType, CreateBoardRequestBodyType, SupportMovingCardRequestBodyType } from '~/types/boardType'
 import { CardSchemaType } from '~/types/cardType'
 import { ColumnSchemaType } from '~/types/columnType'
 import ApiError from '~/utils/ApiError'
@@ -35,7 +37,39 @@ const getDetails = async (id: string) => {
   return resBoard
 }
 
+const update = async (id: string, reqBody: Partial<BoardSchemaType>) => {
+  const updateData: Partial<BoardSchemaType> = {
+    ...reqBody,
+    updatedAt: Date.now()
+  }
+  const updatedBoard = await boardModel.update(id, updateData)
+
+  return updatedBoard
+}
+
+const moveCardToDifferentColumn = async (reqBody: SupportMovingCardRequestBodyType) => {
+  // Bước 1: Cập nhật orderedIds của column cũ
+  await columnModel.update(reqBody.prevColumnId, {
+    cardOrderIds: reqBody.prevCardOrderedIds.map((id) => new ObjectId(id)),
+    updatedAt: Date.now()
+  })
+  // Bước 2: Cập nhật orderedIds của column mới
+  await columnModel.update(reqBody.nextColumnId, {
+    cardOrderIds: reqBody.nextCardOrderedIds.map((id) => new ObjectId(id)),
+    updatedAt: Date.now()
+  })
+  // Bước 3: Cập nhật columnId của card
+  await cardModel.update(reqBody.cardId, {
+    columnId: new ObjectId(reqBody.nextColumnId),
+    updatedAt: Date.now()
+  })
+
+  return { updateResult: 'success' }
+}
+
 export const boardService = {
   create,
-  getDetails
+  getDetails,
+  update,
+  moveCardToDifferentColumn
 }
