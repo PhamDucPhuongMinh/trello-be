@@ -7,13 +7,22 @@ export type CreateBoardRequestBodyType = {
   type: string
 }
 
+// Kiểu dữ liệu truyền vào body của request khi di chuyển một card từ một column này sang column khác
+export type SupportMovingCardRequestBodyType = {
+  cardId: string
+  prevColumnId: string
+  prevCardOrderedIds: string[]
+  nextColumnId: string
+  nextCardOrderedIds: string[]
+}
+
 export type BoardSchemaType = {
   title: string
   slug: string
   description: string
   type: string
   columnOrderIds: ObjectId[]
-  createdAt: string
-  updatedAt: string | null
+  createdAt: number
+  updatedAt: number | null
   _destroy: string
 }

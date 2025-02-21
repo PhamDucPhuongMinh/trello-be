@@ -10,7 +10,7 @@ export type ColumnSchemaType = {
   boardId: ObjectId
   title: string
   cardOrderIds: ObjectId[]
-  createdAt: string
-  updatedAt: string | null
+  createdAt: number
+  updatedAt: number | null
   _destroy: boolean
 }

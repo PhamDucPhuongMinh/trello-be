@@ -16,6 +16,7 @@ const CARD_COLLECTION_SCHEMA = Joi.object<CardSchemaType>({
   updatedAt: Joi.date().timestamp('javascript').default(null),
   _destroy: Joi.boolean().default(false)
 })
+const INVALID_UPDATE_FIELDS = ['_id', 'boardId', 'createdAt']
 
 const create = async (data: object) => {
   try {
@@ -40,9 +41,41 @@ const findOneById = async (id: string | ObjectId) => {
   }
 }
 
+const update = async (cardId: string | ObjectId, updatedData: Partial<CardSchemaType>) => {
+  try {
+    Object.keys(updatedData).forEach((key) => {
+      if (INVALID_UPDATE_FIELDS.includes(key)) {
+        delete updatedData[key as keyof CardSchemaType]
+      }
+      // Check nếu key không có trong schema thì xóa luôn
+      else if (!Object.keys(CARD_COLLECTION_SCHEMA.describe().keys).includes(key)) {
+        delete updatedData[key as keyof CardSchemaType]
+      }
+    })
+
+    if (updatedData.columnId) {
+      updatedData.columnId = new ObjectId(updatedData.columnId)
+    }
+
+    const result = await GET_DB()
+      .collection(CARD_COLLECTION_NAME)
+      .findOneAndUpdate(
+        { _id: new ObjectId(cardId) },
+        { $set: updatedData },
+        {
+          returnDocument: 'after'
+        }
+      )
+    return result
+  } catch (error) {
+    throw new Error(String(error))
+  }
+}
+
 export const cardModel = {
   CARD_COLLECTION_NAME,
   CARD_COLLECTION_SCHEMA,
   create,
-  findOneById
+  findOneById,
+  update
 }
