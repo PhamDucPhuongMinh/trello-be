@@ -90,11 +90,23 @@ const update = async (columnId: string | ObjectId, updatedData: Partial<ColumnSc
   }
 }
 
+const deleteOneById = async (columnId: string | ObjectId) => {
+  try {
+    const result = await GET_DB()
+      .collection(COLUMN_COLLECTION_NAME)
+      .deleteOne({ _id: new ObjectId(columnId) })
+    return result
+  } catch (error) {
+    throw new Error(String(error))
+  }
+}
+
 export const columnModel = {
   COLUMN_COLLECTION_NAME,
   COLUMN_COLLECTION_SCHEMA,
   create,
   findOneById,
   pushCardOrderIds,
-  update
+  update,
+  deleteOneById
 }

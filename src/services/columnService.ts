@@ -1,6 +1,9 @@
+import { StatusCodes } from 'http-status-codes'
 import { boardModel } from '~/models/boardModel'
+import { cardModel } from '~/models/cardModel'
 import { columnModel } from '~/models/columnModel'
 import { ColumnSchemaType, CreateColumnRequestBodyType } from '~/types/columnType'
+import ApiError from '~/utils/ApiError'
 
 const create = async (reqBody: CreateColumnRequestBodyType) => {
   const createdColumnId = await columnModel.create({ ...reqBody })
@@ -29,7 +32,24 @@ const update = async (id: string, reqBody: Partial<ColumnSchemaType>) => {
   return updatedColumn
 }
 
+const deleteItem = async (id: string) => {
+  const targetColumn = await columnModel.findOneById(id)
+  if (!targetColumn) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Column doesn't exist!")
+  }
+  // Xoá Column
+  await columnModel.deleteOneById(id)
+  // Xoá Card trong Column
+  await cardModel.deleteManyByColumnId(id)
+  // Xoá columnId trong collection Board columnOrderIds
+  await boardModel.pullColumnOrderIds(targetColumn.boardId, targetColumn._id)
+  return {
+    deleteResult: 'Column and its Cards deleted successfully!'
+  }
+}
+
 export const columnService = {
   create,
-  update
+  update,
+  deleteItem
 }

@@ -64,6 +64,23 @@ const pushColumnOrderIds = async (boardId: string | ObjectId, columnId: string |
   }
 }
 
+const pullColumnOrderIds = async (boardId: string | ObjectId, columnId: string | ObjectId) => {
+  try {
+    const result = await GET_DB()
+      .collection(BOARD_COLLECTION_NAME)
+      .findOneAndUpdate(
+        { _id: new ObjectId(boardId) },
+        { $pull: { columnOrderIds: new ObjectId(columnId) } as PushOperator<BoardSchemaType> },
+        {
+          returnDocument: 'after'
+        }
+      )
+    return result
+  } catch (error) {
+    throw new Error(String(error))
+  }
+}
+
 const getDetails = async (boardId: string | ObjectId) => {
   try {
     const result = await GET_DB()
@@ -141,6 +158,7 @@ export const boardModel = {
   create,
   findOneById,
   pushColumnOrderIds,
+  pullColumnOrderIds,
   getDetails,
   update
 }
