@@ -72,10 +72,22 @@ const update = async (cardId: string | ObjectId, updatedData: Partial<CardSchema
   }
 }
 
+const deleteManyByColumnId = async (columnId: string | ObjectId) => {
+  try {
+    const result = await GET_DB()
+      .collection(CARD_COLLECTION_NAME)
+      .deleteMany({ columnId: new ObjectId(columnId) })
+    return result
+  } catch (error) {
+    throw new Error(String(error))
+  }
+}
+
 export const cardModel = {
   CARD_COLLECTION_NAME,
   CARD_COLLECTION_SCHEMA,
   create,
   findOneById,
-  update
+  update,
+  deleteManyByColumnId
 }
