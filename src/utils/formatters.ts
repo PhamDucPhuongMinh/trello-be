@@ -1,3 +1,7 @@
+import { pick } from 'lodash'
+import { ObjectId } from 'mongodb'
+import { UserSchemaType } from '~/types/userType'
+
 export const slugify = (val: string) => {
   if (!val) return ''
   return String(val)
@@ -8,4 +12,18 @@ export const slugify = (val: string) => {
     .replace(/[^a-z0-9 -]/g, '') // remove non-alphanumeric characters
     .replace(/\s+/g, '-') // replace spaces with hyphens
     .replace(/-+/g, '-') // remove consecutive hyphens
+}
+
+export const pickUser = (user: UserSchemaType & { _id: ObjectId }) => {
+  return pick(user, [
+    '_id',
+    'email',
+    'username',
+    'displayName',
+    'avatar',
+    'role',
+    'isActivated',
+    'createdAt',
+    'updatedAt'
+  ])
 }
