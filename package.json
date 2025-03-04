@@ -37,6 +37,7 @@
     "typescript-eslint": "^8.20.0"
   },
   "dependencies": {
+    "@getbrevo/brevo": "^2.2.0",
     "async-exit-hook": "^2.0.1",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
