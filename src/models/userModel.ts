@@ -38,6 +38,33 @@ const create = async (newUserData: Partial<UserSchemaType>) => {
   }
 }
 
+const update = async (userId: string | ObjectId, updatedData: Partial<UserSchemaType>) => {
+  try {
+    Object.keys(updatedData).forEach((key) => {
+      if (INVALID_UPDATE_FIELDS.includes(key)) {
+        delete updatedData[key as keyof UserSchemaType]
+      }
+      // Check nếu key không có trong schema thì xóa luôn
+      else if (!Object.keys(USER_COLLECTION_SCHEMA.describe().keys).includes(key)) {
+        delete updatedData[key as keyof UserSchemaType]
+      }
+    })
+
+    const result = await GET_DB()
+      .collection(USER_COLLECTION_NAME)
+      .findOneAndUpdate(
+        { _id: new ObjectId(userId) },
+        { $set: updatedData },
+        {
+          returnDocument: 'after'
+        }
+      )
+    return result as (UserSchemaType & { _id: ObjectId }) | null
+  } catch (error) {
+    throw new Error(String(error))
+  }
+}
+
 const findOneById = async (id: string | ObjectId) => {
   try {
     const result = await GET_DB()
@@ -65,6 +92,7 @@ export const userModel = {
   INVALID_UPDATE_FIELDS,
 
   create,
+  update,
   findOneById,
   findOneByEmail
 }

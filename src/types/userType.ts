@@ -13,7 +13,7 @@ export type UserSchemaType = {
   role: string
 
   isActivated: boolean
-  verifyToken: string
+  verifyToken: string | null
 
   createdAt: number
   updatedAt: number | null
