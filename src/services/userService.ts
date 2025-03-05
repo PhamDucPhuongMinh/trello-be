@@ -7,6 +7,9 @@ import ApiError from '~/utils/ApiError'
 import { pickUser } from '~/utils/formatters'
 import { WEBSITE_DOMAIN } from '~/utils/constants'
 import { BrevoProvider } from '~/providers/BrevoProvider'
+import { JwtProvider } from '~/providers/JwtProvider'
+import { env } from '~/config/environment'
+import ms from 'ms'
 
 const create = async (reqBody: RegisterUserRequestBodyType) => {
   try {
@@ -54,6 +57,63 @@ const create = async (reqBody: RegisterUserRequestBodyType) => {
   }
 }
 
+const verifyAccount = async (reqBody: { email: string; token: string }) => {
+  const existedUser = await userModel.findOneByEmail(reqBody.email)
+  if (!existedUser) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Account not found')
+  }
+  if (existedUser.isActivated) {
+    throw new ApiError(StatusCodes.NOT_ACCEPTABLE, 'Your account has been verified')
+  }
+  if (reqBody.token !== existedUser.verifyToken) {
+    throw new ApiError(StatusCodes.NOT_ACCEPTABLE, 'Invalid token')
+  }
+
+  const updatedData = {
+    isActivated: true,
+    verifyToken: null
+  }
+  const updatedUser = await userModel.update(existedUser._id, updatedData)
+  return updatedUser ? pickUser(updatedUser) : null
+}
+
+const login = async (reqBody: { email: string; password: string }) => {
+  const existedUser = await userModel.findOneByEmail(reqBody.email)
+  if (!existedUser) {
+    throw new ApiError(StatusCodes.NOT_ACCEPTABLE, 'Your email or password is incorrect')
+  }
+  if (!existedUser.isActivated) {
+    throw new ApiError(StatusCodes.NOT_ACCEPTABLE, 'Your account has not been verified')
+  }
+  if (!bcrypt.compareSync(reqBody.password, existedUser.password)) {
+    throw new ApiError(StatusCodes.NOT_ACCEPTABLE, 'Your email or password is incorrect')
+  }
+
+  // Tạo token và trả về cho client
+  const userInfo = {
+    userId: existedUser._id,
+    email: existedUser.email
+  }
+  const accessToken = JwtProvider.generateToken(
+    userInfo,
+    env.ACCESS_TOKEN_SECRET_SIGNATURE,
+    env.ACCESS_TOKEN_LIFE as ms.StringValue
+  )
+  const refreshToken = JwtProvider.generateToken(
+    userInfo,
+    env.REFRESH_TOKEN_SECRET_SIGNATURE,
+    env.REFRESH_TOKEN_LIFE as ms.StringValue
+  )
+
+  return {
+    accessToken,
+    refreshToken,
+    ...pickUser(existedUser)
+  }
+}
+
 export const userService = {
-  create
+  create,
+  verifyAccount,
+  login
 }
