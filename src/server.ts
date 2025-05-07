@@ -6,9 +6,19 @@ import { env } from '~/config/environment'
 import { APIsV1 } from '~/routes/v1'
 import { errorHandlingMiddleware } from '~/middlewares/errorHandlingMiddleware'
 import { corsOptions } from './config/cors'
+import cookieParser from 'cookie-parser'
 
 const START_SERVER = () => {
   const app = express()
+
+  // Xử lý Cache from disk
+  app.use((req, res, next) => {
+    res.set('Cache-Control', 'no-store')
+    next()
+  })
+
+  // Setting cookie parser
+  app.use(cookieParser())
 
   //  Enable req body json data
   app.use(express.json())
