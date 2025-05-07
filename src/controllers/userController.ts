@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express'
 import { StatusCodes } from 'http-status-codes'
+import ms from 'ms'
 import { userService } from '~/services/userService'
 
 const create = async (req: Request, res: Response, next: NextFunction) => {
@@ -25,6 +26,19 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
     const result = await userService.login(req.body)
 
     // Xử lý trả về http only cookie cho phía client
+    res.cookie('accessToken', result.accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: ms('14days')
+    })
+
+    res.cookie('refreshToken', result.refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: ms('14days')
+    })
 
     res.status(StatusCodes.OK).json(result)
   } catch (error) {
