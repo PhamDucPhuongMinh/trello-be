@@ -10,6 +10,7 @@ import { BrevoProvider } from '~/providers/BrevoProvider'
 import { JwtProvider } from '~/providers/JwtProvider'
 import { env } from '~/config/environment'
 import ms from 'ms'
+import { JwtPayload } from 'jsonwebtoken'
 
 const create = async (reqBody: RegisterUserRequestBodyType) => {
   try {
@@ -112,8 +113,30 @@ const login = async (reqBody: { email: string; password: string }) => {
   }
 }
 
+const refreshToken = async (refreshToken: string) => {
+  const refreshTokenDecoded = JwtProvider.verifyToken(refreshToken, env.REFRESH_TOKEN_SECRET_SIGNATURE)
+
+  if (typeof refreshTokenDecoded !== 'object' || refreshTokenDecoded === null) {
+    throw new ApiError(StatusCodes.UNAUTHORIZED, 'Please login to continue')
+  }
+
+  const userInfo = {
+    _id: (refreshTokenDecoded as JwtPayload)._id,
+    email: (refreshTokenDecoded as JwtPayload).email
+  }
+
+  const accessToken = JwtProvider.generateToken(
+    userInfo,
+    env.ACCESS_TOKEN_SECRET_SIGNATURE,
+    env.ACCESS_TOKEN_LIFE as ms.StringValue
+  )
+
+  return { accessToken }
+}
+
 export const userService = {
   create,
   verifyAccount,
-  login
+  login,
+  refreshToken
 }
